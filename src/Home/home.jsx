@@ -90,17 +90,16 @@ export default function Home() {
 
   function toLocalInputFormat(dateString) {
     if (!dateString) return "";
-    return new Date(dateString)
-      .toLocaleString("sv-SE", { //sv-SE for Swedish time format YYYY-MM-DDTHH:MM
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-      .replace(" ", "T");
+    const date = new Date(dateString); // Convert once from UTC → browser time
+    const pad = (n) => String(n).padStart(2, "0"); // Ensure 2 digits
+    return (
+      date.getFullYear() + "-" +               // YYYY
+      pad(date.getMonth() + 1) + "-" +          // MM
+      pad(date.getDate()) + "T" +               // DD + T
+      pad(date.getHours()) + ":" +              // HH
+      pad(date.getMinutes())                   // MM
+    );
   }
-
 
   const handleToggleStatus = async (todo) => {
     try {
