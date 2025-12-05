@@ -48,12 +48,17 @@ export default function Home() {
     fetchTodos();
   }, [user]);
 
+  const formatForBackend = (value) =>
+    new Date(value).toLocaleString("sv-SE").replace(" ", "T");
+
+
   // CREATE TODO
   const handleCreateTodo = async (e) => {
     e.preventDefault();
     try {
       const res = await todoServices.postTodo({
         ...newTodo,
+        deadline: formatForBackend(newTodo.deadline),
         createdBy: user._id,
       });
       toast.success(res.data.message);
@@ -73,7 +78,7 @@ export default function Home() {
         task: editing.task,
         description: editing.description,
         status: editing.status,
-        deadline: editing.deadline
+        deadline: formatForBackend(editing.deadline)
       });
       toast.success(res.data.message);
       setTodos((prev) =>
@@ -87,19 +92,6 @@ export default function Home() {
       toast.error(err?.response?.data?.message);
     }
   };
-
-  function toLocalInputFormat(dateString) {
-    if (!dateString) return "";
-    const date = new Date(dateString); // Convert once from UTC → browser time
-    const pad = (n) => String(n).padStart(2, "0"); // Ensure 2 digits
-    return (
-      date.getFullYear() + "-" +               // YYYY
-      pad(date.getMonth() + 1) + "-" +          // MM
-      pad(date.getDate()) + "T" +               // DD + T
-      pad(date.getHours()) + ":" +              // HH
-      pad(date.getMinutes())                   // MM
-    );
-  }
 
   const handleToggleStatus = async (todo) => {
     try {
@@ -202,8 +194,8 @@ export default function Home() {
                 <div className="flex gap-2 items-center">
                   <button
                     onClick={() => {
-                      const formattedDeadline = toLocalInputFormat(todo.deadline);
-                      setEditing({ ...todo, deadline: formattedDeadline });
+                      let formatDate = formatForBackend(todo.deadline);
+                      setEditing({ ...todo, deadline: formatDate });
                     }}
                     className="px-2 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 cursor-pointer"
                   >
