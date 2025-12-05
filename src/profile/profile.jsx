@@ -151,7 +151,7 @@ export default function Profile() {
                     {/* UPDATE BUTTON */}
                     <button
                         onClick={handleUserData}
-                        className="mt-6 w-full py-3 bg-sky-600 text-white rounded-lg hover:bg-sky-700"
+                        className="mt-6 w-full py-3 bg-sky-600 text-white rounded-lg hover:bg-sky-700 hover:cursor-pointer transition"
                     >
                         Update Profile
                     </button>

@@ -48,17 +48,12 @@ export default function Home() {
     fetchTodos();
   }, [user]);
 
-  const formatForBackend = (value) =>
-    new Date(value).toLocaleString("sv-SE").replace(" ", "T");
-
-
   // CREATE TODO
   const handleCreateTodo = async (e) => {
     e.preventDefault();
     try {
       const res = await todoServices.postTodo({
         ...newTodo,
-        deadline: formatForBackend(newTodo.deadline),
         createdBy: user._id,
       });
       toast.success(res.data.message);
@@ -78,7 +73,7 @@ export default function Home() {
         task: editing.task,
         description: editing.description,
         status: editing.status,
-        deadline: formatForBackend(editing.deadline)
+        deadline: editing.deadline
       });
       toast.success(res.data.message);
       setTodos((prev) =>
@@ -92,6 +87,20 @@ export default function Home() {
       toast.error(err?.response?.data?.message);
     }
   };
+
+  function toLocalInputFormat(dateString) {
+    if (!dateString) return "";
+    return new Date(dateString)
+      .toLocaleString("sv-SE", { //sv-SE for Swedish time format YYYY-MM-DDTHH:MM
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+      .replace(" ", "T");
+  }
+
 
   const handleToggleStatus = async (todo) => {
     try {
@@ -194,8 +203,8 @@ export default function Home() {
                 <div className="flex gap-2 items-center">
                   <button
                     onClick={() => {
-                      let formatDate = formatForBackend(todo.deadline);
-                      setEditing({ ...todo, deadline: formatDate });
+                      const formattedDeadline = toLocalInputFormat(todo.deadline);
+                      setEditing({ ...todo, deadline: formattedDeadline });
                     }}
                     className="px-2 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 cursor-pointer"
                   >
