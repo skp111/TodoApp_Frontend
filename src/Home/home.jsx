@@ -88,20 +88,6 @@ export default function Home() {
     }
   };
 
-  function toLocalInputFormat(dateString) {
-    if (!dateString) return "";
-    return new Date(dateString)
-      .toLocaleString("sv-SE", { //sv-SE for Swedish time format YYYY-MM-DDTHH:MM
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-      .replace(" ", "T");
-  }
-
-
   const handleToggleStatus = async (todo) => {
     try {
       const res = await todoServices.updateTodo(todo._id, {
@@ -203,8 +189,7 @@ export default function Home() {
                 <div className="flex gap-2 items-center">
                   <button
                     onClick={() => {
-                      const formattedDeadline = toLocalInputFormat(todo.deadline);
-                      setEditing({ ...todo, deadline: formattedDeadline });
+                      setEditing({ ...todo, deadline: todo.deadline });
                     }}
                     className="px-2 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 cursor-pointer"
                   >
