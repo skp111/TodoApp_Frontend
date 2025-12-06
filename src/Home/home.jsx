@@ -88,6 +88,22 @@ export default function Home() {
     }
   };
 
+  const formateDate = (utcISOString) => {
+    if (!utcISOString) return "";
+
+    const localDate = new Date(utcISOString);
+
+    const year = localDate.getFullYear();
+    const month = String(localDate.getMonth() + 1).padStart(2, "0");
+    const day = String(localDate.getDate()).padStart(2, "0");
+    const hours = String(localDate.getHours()).padStart(2, "0");
+    const minutes = String(localDate.getMinutes()).padStart(2, "0");
+
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+
+
   const handleToggleStatus = async (todo) => {
     try {
       const res = await todoServices.updateTodo(todo._id, {
@@ -189,7 +205,7 @@ export default function Home() {
                 <div className="flex gap-2 items-center">
                   <button
                     onClick={() => {
-                      setEditing({ ...todo, deadline: todo.deadline });
+                      setEditing({ ...todo });
                     }}
                     className="px-2 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 cursor-pointer"
                   >
@@ -240,13 +256,12 @@ export default function Home() {
 
                   <input
                     type="datetime-local"
-                    value={editing.deadline}
+                    value={formateDate(editing.deadline)}
                     onChange={(e) =>
                       setEditing({ ...editing, deadline: e.target.value })
                     }
                     className="w-full border p-2 rounded"
                   />
-
 
                   <button
                     type="submit"
