@@ -15,10 +15,30 @@ export default function Home() {
   const [newTodo, setNewTodo] = useState({
     task: "",
     description: "",
-    deadline: ""
+    deadlineLocal: "", // local string for datetime-local
   });
 
-  // Load user from location or localStorage
+  // ---------------- Helper Functions ----------------
+
+  // Convert UTC ISO string to local datetime string for input
+  const formatUTCToLocal = (utcISOString) => {
+    if (!utcISOString) return "";
+    const localDate = new Date(utcISOString);
+    const year = localDate.getFullYear();
+    const month = String(localDate.getMonth() + 1).padStart(2, "0");
+    const day = String(localDate.getDate()).padStart(2, "0");
+    const hours = String(localDate.getHours()).padStart(2, "0");
+    const minutes = String(localDate.getMinutes()).padStart(2, "0");
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+
+  // Convert local datetime string to UTC ISO for backend
+  const formatLocalToUTC = (localDateTime) => {
+    if (!localDateTime) return "";
+    return new Date(localDateTime).toISOString();
+  };
+
+  // ---------------- Load User ----------------
   useEffect(() => {
     if (location?.state?.user) {
       setUser(location.state.user);
@@ -29,9 +49,9 @@ export default function Home() {
     }
   }, [location.state, navigate]);
 
-  // Fetch todos when user is available
+  // ---------------- Fetch Todos ----------------
   useEffect(() => {
-    if (!user) return; //under useEffect nothing is allowed to be return (means blank return is allowed here)
+    if (!user) return;
     const fetchTodos = async () => {
       try {
         setLoading(true);
@@ -44,28 +64,28 @@ export default function Home() {
         setLoading(false);
       }
     };
-
     fetchTodos();
   }, [user]);
 
-  // CREATE TODO
+  // ---------------- Create Todo ----------------
   const handleCreateTodo = async (e) => {
     e.preventDefault();
     try {
       const res = await todoServices.postTodo({
         ...newTodo,
+        deadline: formatLocalToUTC(newTodo.deadlineLocal),
         createdBy: user._id,
       });
       toast.success(res.data.message);
       setTodos((todos) => [...todos, res.data.result]);
-      setNewTodo({ task: "", description: "", deadline: "" });
+      setNewTodo({ task: "", description: "", deadlineLocal: "" });
     } catch (err) {
       console.error(err);
       toast.error(err?.response?.data?.message);
     }
   };
 
-  // UPDATE TODO
+  // ---------------- Edit Todo ----------------
   const handleEditTodo = async (e) => {
     e.preventDefault();
     try {
@@ -73,50 +93,31 @@ export default function Home() {
         task: editing.task,
         description: editing.description,
         status: editing.status,
-        deadline: editing.deadline
+        deadline: formatLocalToUTC(editing.deadlineLocal),
       });
       toast.success(res.data.message);
       setTodos((prev) =>
-        prev.map((t) =>
-          t._id === editing._id ? res.data.todo : t
-        )
+        prev.map((t) => (t._id === editing._id ? res.data.todo : t))
       );
-      setEditing(null); // Close edit form
+      setEditing(null);
     } catch (err) {
       console.error(err);
       toast.error(err?.response?.data?.message);
     }
   };
 
-  const formateDate = (utcISOString) => {
-    if (!utcISOString) return "";
-
-    const localDate = new Date(utcISOString);
-
-    const year = localDate.getFullYear();
-    const month = String(localDate.getMonth() + 1).padStart(2, "0");
-    const day = String(localDate.getDate()).padStart(2, "0");
-    const hours = String(localDate.getHours()).padStart(2, "0");
-    const minutes = String(localDate.getMinutes()).padStart(2, "0");
-
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
-  };
-
-
-
+  // ---------------- Toggle Status ----------------
   const handleToggleStatus = async (todo) => {
     try {
       const res = await todoServices.updateTodo(todo._id, {
         task: todo.task,
         description: todo.description,
         status: !todo.status,
-        deadline: todo.deadline
+        deadline: todo.deadline,
       });
       toast.success(res.data.message);
       setTodos((prev) =>
-        prev.map((t) =>
-          t._id === todo._id ? { ...t, status: !todo.status } : t
-        )
+        prev.map((t) => (t._id === todo._id ? { ...t, status: !todo.status } : t))
       );
     } catch (err) {
       console.error(err);
@@ -124,15 +125,13 @@ export default function Home() {
     }
   };
 
-  // DELETE TODO
+  // ---------------- Delete Todo ----------------
   const handleDeleteTodo = async (todoId) => {
     if (!window.confirm("Are you sure you want to delete this todo?")) return;
-
     try {
       const res = await todoServices.deleteTodo(todoId);
       toast.success(res.data.message);
-      const filtered = todos.filter((t) => t._id !== todoId);
-      setTodos(filtered);
+      setTodos((prev) => prev.filter((t) => t._id !== todoId));
     } catch (err) {
       console.error(err);
       toast.error(err?.response?.data?.message);
@@ -153,12 +152,11 @@ export default function Home() {
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
-
-      {/* CREATE TODO */}
+      {/* ---------------- Create Todo Form ---------------- */}
       <form
         onSubmit={handleCreateTodo}
-        className="mb-6 p-4 border rounded-lg shadow-sm space-y-3">
-
+        className="mb-6 p-4 border rounded-lg shadow-sm space-y-3"
+      >
         <h2 className="text-lg font-medium mb-2">Add New Todo</h2>
         <input
           type="text"
@@ -170,15 +168,13 @@ export default function Home() {
         <textarea
           placeholder="Description"
           value={newTodo.description}
-          onChange={(e) =>
-            setNewTodo({ ...newTodo, description: e.target.value })
-          }
+          onChange={(e) => setNewTodo({ ...newTodo, description: e.target.value })}
           className="w-full border p-2 rounded"
         />
         <input
           type="datetime-local"
-          value={newTodo.deadline}
-          onChange={(e) => setNewTodo({ ...newTodo, deadline: e.target.value })}
+          value={newTodo.deadlineLocal}
+          onChange={(e) => setNewTodo({ ...newTodo, deadlineLocal: e.target.value })}
           className="w-full border p-2 rounded"
         />
         <button
@@ -189,14 +185,12 @@ export default function Home() {
         </button>
       </form>
 
-      {/* TODO LIST */}
+      {/* ---------------- Todo List ---------------- */}
       {todos.length > 0 ? (
         <ul className="space-y-3">
           {todos.map((todo) => (
             <div key={todo._id}>
-              <li
-                className="p-3 mb-3 border rounded-lg shadow-sm flex justify-between items-center"
-              >
+              <li className="p-3 mb-3 border rounded-lg shadow-sm flex justify-between items-center">
                 <div>
                   <h2 className="font-medium">{todo.task}</h2>
                   <p className="text-sm text-gray-600">{todo.description}</p>
@@ -204,9 +198,13 @@ export default function Home() {
 
                 <div className="flex gap-2 items-center">
                   <button
-                    onClick={() => {
-                      setEditing({ ...todo });
-                    }}
+                    onClick={() =>
+                      setEditing({
+                        ...todo,
+                        deadlineUTC: todo.deadline,
+                        deadlineLocal: formatUTCToLocal(todo.deadline),
+                      })
+                    }
                     className="px-2 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 cursor-pointer"
                   >
                     Edit
@@ -214,10 +212,11 @@ export default function Home() {
 
                   <button
                     onClick={() => handleToggleStatus(todo)}
-                    className={`px-2 py-1 text-sm rounded cursor-pointer ${todo.status
-                      ? "bg-green-100 text-green-700 hover:bg-green-200"
-                      : "bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
-                      }`}
+                    className={`px-2 py-1 text-sm rounded cursor-pointer ${
+                      todo.status
+                        ? "bg-green-100 text-green-700 hover:bg-green-200"
+                        : "bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
+                    }`}
                   >
                     {todo.status ? "Completed" : "Pending"}
                   </button>
@@ -230,6 +229,8 @@ export default function Home() {
                   </button>
                 </div>
               </li>
+
+              {/* ---------------- Edit Form ---------------- */}
               {editing?._id === todo._id && (
                 <form
                   onSubmit={handleEditTodo}
@@ -256,12 +257,15 @@ export default function Home() {
 
                   <input
                     type="datetime-local"
-                    value={formateDate(editing.deadline)}
+                    value={editing.deadlineLocal}
                     onChange={(e) =>
-                      setEditing({ ...editing, deadline: e.target.value })
+                      setEditing({ ...editing, deadlineLocal: e.target.value })
                     }
                     className="w-full border p-2 rounded"
                   />
+
+                  <p>Deadline (Local): {editing.deadlineLocal}</p>
+                  <p>Deadline (UTC): {editing.deadlineUTC}</p>
 
                   <button
                     type="submit"
